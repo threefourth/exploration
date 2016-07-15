@@ -50,7 +50,7 @@ $('.document').ready(function() {
 
   var updateGraph = function(dataArray) {
     analyser.getByteTimeDomainData(dataArray);
-    console.log(dataArray);
+    // console.log(dataArray);
     var dots = graph.selectAll('circle')
       .data(dataArray);
 
