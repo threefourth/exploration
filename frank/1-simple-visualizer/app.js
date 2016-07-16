@@ -97,13 +97,15 @@ $(document).ready(function() {
       // Set up the Web Audio node chain
       source.connect(analyser);
       analyser.connect(audioContext.destination);
-
+      analyser.getByteTimeDomainData(dataArray);
+      updateGraph(dataArray);
       // Start playing the song
       source.start();
 
       // Periodically call the visualizer 
       setInterval(updateGraph.bind(this, dataArray), 100);
     });
+
   };
 
   $('#fileInput').change(function(event) {
