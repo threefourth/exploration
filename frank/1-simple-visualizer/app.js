@@ -57,13 +57,17 @@ $(document).ready(function() {
   // type that Web Audio's audiodecoder expects.
 
   var onFileChange = function(callback, event) {
+    // The filereader reads the uploaded file as an ArrayBuffer
+    // and stores the buffer in result. When the file is loaded,
+    // the data is piped to the callback
+
     var reader = new FileReader();
+    reader.readAsArrayBuffer(event.target.files[0]);
+
     reader.onload = function(e) {
 
       callback(e.target.result);
     };
-    
-    reader.readAsArrayBuffer(event.target.files[0]);
   };
 
   /*
@@ -93,13 +97,15 @@ $(document).ready(function() {
       // Set up the Web Audio node chain
       source.connect(analyser);
       analyser.connect(audioContext.destination);
-
+      analyser.getByteTimeDomainData(dataArray);
+      updateGraph(dataArray);
       // Start playing the song
       source.start();
 
       // Periodically call the visualizer 
       setInterval(updateGraph.bind(this, dataArray), 100);
     });
+
   };
 
   $('#fileInput').change(function(event) {
@@ -127,18 +133,18 @@ $(document).ready(function() {
 
   var xScale = d3.scaleLinear()
     .domain([0, 128])
-    .range([0, 500]);
+    .range([0, 1000]);
   var yScale = d3.scaleLinear()
     .domain([0, 128])
-    .range([0, 500]);
+    .range([0, 1000]);
 
   var graph = d3.select('.visualizer').append('svg')
-    .attr('width', 500)
-    .attr('height', 500);
+    .attr('width', 1000)
+    .attr('height', 1000);
 
   var updateGraph = function(dataArray) {
     analyser.getByteTimeDomainData(dataArray);
-    console.log(dataArray);
+    // console.log(dataArray);
     var dots = graph.selectAll('circle')
       .data(dataArray);
 
@@ -172,37 +178,3 @@ $(document).ready(function() {
   };
 
 });
-
-  /*
-    TRYING MICROPHONE INPUT
-  */
-  // var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  // var analyser = audioContext.createAnalyser();
-  // analyser.fftSize = 2048;
-  // var bufferLength = analyser.frequencyBinCount;
-  // var dataArray = new Uint8Array(bufferLength);
-
-  // var getUserSound = function() {
-  //   var stream = navigator.mediaDevices.getUserMedia({audio: 'true'});
-  // };
-
-  // var logSound = function(stream) {
-  //   var source = audioContext.createMediaStreamSource(stream);
-
-  //   // connect it to the analyser
-  //   source.connect(analyser);
-  //   analyser.getByteTimeDomainData(dataArray);
-  //   console.log(dataArray);
-  // };
-
-  // getUserSound();
-
-
-
-
-
-
-
-
-
-
