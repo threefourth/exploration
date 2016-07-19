@@ -3,15 +3,20 @@
 <head>
   <title>Spotify API</title>
   <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+  <script type="text/javascript" src="https://w.soundcloud.com/player/api.js"></script>
+  <script src="https://connect.soundcloud.com/sdk/sdk-3.1.2.js"></script>
   <script type="text/javascript" src="app.js"></script>
 </head>
 <body>
-  Spotify API body<br><br>
 
-  <form id="search-spotify">
-    <input type="text" class="search" placeholder="Query" />
-    <input type="submit" class="button" value="Search" onclick="searchSpotify()"/>
-  </form>
-  
+  <form id="music-form">
+    <input type="text" class="link" placeholder="Spotify URI, YouTube link, Soundcloud link" style="width: 255px"/>
+    <input type="submit" class="button" value="Submit"/>
+  </form><br>
+
+	<div id="widget-container">
+		<!-- Audio player will populate here -->
+	</div><br>
+
 </body>
 </html>
