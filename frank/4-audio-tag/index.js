@@ -32,4 +32,12 @@ $(document).ready(function() {
   source.connect(analyser);
   analyser.connect(audioContext.destination);
 
+  // Draw the visualization graph and periodically call the
+  // updateGraph visualizer function
+  var graph = d3.select('#visualizer').append('svg')
+    .attr('width', 500)
+    .attr('height', 500);
+
+  setInterval(updateGraph.bind(this, dataArray, analyser, graph), 100);
+
 });

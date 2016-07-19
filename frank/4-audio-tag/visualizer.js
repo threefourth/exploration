@@ -3,16 +3,12 @@
 var xScale = d3.scaleLinear()
     .domain([0, 128])
     .range([0, 1000]);
-    
+
 var yScale = d3.scaleLinear()
   .domain([0, 128])
   .range([0, 1000]);
 
-var graph = d3.select('.visualizer').append('svg')
-  .attr('width', 1000)
-  .attr('height', 1000);
-
-var updateGraph = function(dataArray) {
+var updateGraph = function(dataArray, analyser, graph) {
   analyser.getByteTimeDomainData(dataArray);
   // console.log(dataArray);
   var dots = graph.selectAll('circle')
