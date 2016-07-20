@@ -4,6 +4,7 @@ $('.document').ready(function() {
   // Chrome, however, treats localhost as a secure 
   // connection. So, use live-server to host the 
   // site on localhost when testing it out.
+  // Launch by executing shell command 'live-server'.
   var audioContext = new (window.AudioContext || window.webkitAudioContext)();
   var analyser = audioContext.createAnalyser();
   analyser.fftSize = 2048;
