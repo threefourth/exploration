@@ -4,6 +4,8 @@ $('.document').ready(function() {
   // Chrome, however, treats localhost as a secure 
   // connection. So, use live-server to host the 
   // site on localhost when testing it out.
+  // Launch by executing shell command 'live-server'
+  // WITHOUT the index.html
   var audioContext = new (window.AudioContext || window.webkitAudioContext)();
   var analyser = audioContext.createAnalyser();
   analyser.fftSize = 2048;
@@ -20,15 +22,42 @@ $('.document').ready(function() {
     // This is allowed by Web Audio, and it just means that 
     // the user audio won't be played back.
 
-    navigator.mediaDevices.getUserMedia({audio:true})
-      .then(function(mediaStream) {
-        console.log('Getting user audio');
-        var source = audioContext.createMediaStreamSource(mediaStream);
+    // Web Audio once used navigator.getUserMedia to access user's 
+    // camera and microphone. This method has been deprecated.
+    // Navigator.mediaDevices.getUserMedia is the newer standard 
+    // and works on the latest Chrome builds. But sometimes Chrome
+    // won't recognize navigator.mediaDevices.getUserMedia as an 
+    // available function. We have to use navigator.webkitGetUserMedia
+    // instead in those cases.
 
-        source.connect(analyser);
+    if (navigator.mediaDevices.getUserMedia) {
 
-        setInterval(updateGraph.bind(this, dataArray), 100);
-      });
+      navigator.mediaDevices.getUserMedia({audio:true})
+        .then(function(mediaStream) {
+          console.log('Getting user audio via mediaDevices.getUserMedia');
+          var source = audioContext.createMediaStreamSource(mediaStream);
+
+          source.connect(analyser);
+
+          setInterval(updateGraph.bind(this, dataArray), 100);
+        });
+
+    } else if (navigator.webkitGetUserMedia) {
+
+      navigator.webkitGetUserMedia({audio:true}, function(mediaStream) {
+          console.log('Getting user audio via webkitGetUserMedia');
+          var source = audioContext.createMediaStreamSource(mediaStream);
+
+          source.connect(analyser);
+
+          setInterval(updateGraph.bind(this, dataArray), 100);
+        }, function(error) { console.log(error); });
+      
+    } else {
+
+      alert('This browser does not support user audio input');
+
+    }
   };
 
   /*
