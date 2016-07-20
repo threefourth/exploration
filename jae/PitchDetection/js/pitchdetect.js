@@ -164,10 +164,13 @@ var toggleLiveInput = function() {
     // sourceNode = null;
     localStream.getAudioTracks()[0].stop( 0 ); // Stops the microphone
     mediaStreamSource = null; // getUserMedia uses mediaStreamSource instead of sourceNode
+
     analyser = null;
     isPlaying = false;
+    mediaStreamSource.disconnect(analyser);
 
     return 'stop live input';
+
     // if (!window.cancelAnimationFrame) {
     //   window.cancelAnimationFrame = window.webkitCancelAnimationFrame;
     // }
@@ -265,7 +268,6 @@ var getUserAudio = function() {
     alert('This browser does not support use audio input');
 
   }
-
 };
 
 var togglePlayback = function() {
@@ -476,14 +478,14 @@ var drawNoteGraph = function() {
   // console.log('max pitch is: ', maxPitch);
 
   if (graphCanvas) {
-    noteCanvas.clearRect(0, 0, 2560, 256);
+    noteCanvas.clearRect(0, 0, 600, 256);
 
     noteCanvas.strokeStyle = 'red';
     noteCanvas.beginPath();
     noteCanvas.moveTo(0, 0);
     noteCanvas.lineTo(0, 256);
     noteCanvas.moveTo(0, 256);
-    noteCanvas.lineTo(2560, 256);
+    noteCanvas.lineTo(600, 256);
     noteCanvas.stroke();
 
     noteCanvas.strokeStyle = 'black';

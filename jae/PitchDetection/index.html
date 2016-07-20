@@ -30,8 +30,8 @@
     
     <p>
       <button onclick="this.innerText = togglePlayback()">use demo audio</button>
-      <button onclick="toggleLiveInput()">use live input</button>
-      <button onclick="toggleOscillator()">use oscillator</button>
+      <button onclick="this.innerText = toggleLiveInput()">use live input</button>
+      <button onclick="this.innerText = toggleOscillator()">use oscillator</button>
       <!--<button onclick="updatePitch(0);">sample</button>-->
     </p>
 
@@ -42,9 +42,7 @@
       <div id="detune"><span id="detune_amt">--</span><span id="flat">cents &#9837;</span><span id="sharp">cents &#9839;</span></div>
     </div>
 
-    <br></br>
-    <br></br>
-    <canvas id="pitchGraph" width="2560" height="256"></canvas>
+    <canvas id="pitchGraph" width="600" height="256"></canvas>
     <canvas id="waveform" width="512" height="256"></canvas>
     
 
