@@ -1,0 +1,25 @@
+audio context
+modular routing
+audio nodes -> audio routing graph
+
+Workflow:
+1. Create audio context
+2. Inside the context, create sources — such as <audio>, oscillator, stream
+3. Create effects nodes, such as reverb, biquad filter, panner, compressor
+4. Choose final destination of audio, for example your system speakers
+5. Connect the sources up to the effects, and the effects to the destination
+
+var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+Audio sources:
+  - raw PCM data
+  - taken from HTML media elements <video> <audio>
+    - maybe we can grab videos from YouTube API or web URL links (soundcloud etc) and then extract the audio from there
+  - WebRTC MediaStream: webcam or microphone
+    - AudioContext.createMediaStreamSource()
+
+
+To play a music file directly:
+load the file using XHR -> decode file into a buffer -> feed buffer into a buffer source
+helpful library: AudioSampleLoader
+
