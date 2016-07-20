@@ -158,12 +158,13 @@ var toggleOscillator = function() {
 var toggleLiveInput = function() {
   if (isPlaying) {
     // stop playing and return
-    sourceNode.stop( 0 );
+    // sourceNode.stop( 0 );
     sourceNode = null;
     analyser = null;
     isPlaying = false;
+    mediaStreamSource.disconnect(analyser);
 
-    return 'using live input!';
+    return 'use live input';
     // if (!window.cancelAnimationFrame) {
     //   window.cancelAnimationFrame = window.webkitCancelAnimationFrame;
     // }
@@ -223,17 +224,33 @@ var getUserAudio = function() {
   // This is allowed by Web Audio, and it just means that 
   // the user audio won't be played back.
 
-  navigator.mediaDevices.getUserMedia({audio: true})
-    .then(function(mediaStream) {
-      console.log('Getting user audio');
-      mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
+  // navigator.mediaDevices.getUserMedia({audio: true})
+  //   .then(function(mediaStream) {
+  //     console.log('Getting user audio');
+  //     mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
 
-      analyser = audioContext.createAnalyser();
-      analyser.fftSize = 2048;
-      mediaStreamSource.connect( analyser );
+  //     analyser = audioContext.createAnalyser();
+  //     analyser.fftSize = 2048;
+  //     mediaStreamSource.connect( analyser );
 
-      setInterval(updatePitch, setIntervalTimeRate);
-    });
+  //     setInterval(updatePitch, setIntervalTimeRate);
+  //   });
+  //   
+  console.log('inside GetUserAudio function');
+
+  navigator.webkitGetUserMedia({audio: true}, function(mediaStream) {
+    console.log('Getting user audio');
+    mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
+
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 2048;
+    mediaStreamSource.connect( analyser );
+    // sourceNode.start(0);
+    isPlaying = true;
+    isLiveInput = true;
+
+    setInterval(updatePitch, setIntervalTimeRate);
+  }, function(error) { console.log(error); });
 };
 
 var togglePlayback = function() {
@@ -445,14 +462,14 @@ var drawNoteGraph = function() {
   // console.log('max pitch is: ', maxPitch);
 
   if (graphCanvas) {
-    noteCanvas.clearRect(0, 0, 2560, 256);
+    noteCanvas.clearRect(0, 0, 600, 256);
 
     noteCanvas.strokeStyle = 'red';
     noteCanvas.beginPath();
     noteCanvas.moveTo(0, 0);
     noteCanvas.lineTo(0, 256);
     noteCanvas.moveTo(0, 256);
-    noteCanvas.lineTo(2560, 256);
+    noteCanvas.lineTo(600, 256);
     noteCanvas.stroke();
 
     noteCanvas.strokeStyle = 'black';
