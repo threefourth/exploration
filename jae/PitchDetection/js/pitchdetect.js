@@ -24,7 +24,7 @@ SOFTWARE.
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 
-var setIntervalTimeRate = 1000; // milliseconds
+var setIntervalTimeRate = 1000 / 60; // milliseconds
 var audioContext = null;
 var isPlaying = false;
 var sourceNode = null;
@@ -158,12 +158,13 @@ var toggleOscillator = function() {
 var toggleLiveInput = function() {
   if (isPlaying) {
     // stop playing and return
-    sourceNode.stop( 0 );
+    // sourceNode.stop( 0 );
     sourceNode = null;
     analyser = null;
     isPlaying = false;
+    mediaStreamSource.disconnect(analyser);
 
-    return 'using live input!';
+    return 'use live input';
     // if (!window.cancelAnimationFrame) {
     //   window.cancelAnimationFrame = window.webkitCancelAnimationFrame;
     // }
@@ -187,53 +188,35 @@ var toggleLiveInput = function() {
   
 };
 
-// var gotStream = function(stream) {
-//   // Create an AudioNode from the stream.
-//   mediaStreamSource = audioContext.createMediaStreamSource(stream);
-
-//   // Connect it to the destination.
-//   analyser = audioContext.createAnalyser();
-//   analyser.fftSize = 2048;
-//   mediaStreamSource.connect( analyser );
-  
-//   setInterval(updatePitch, setIntervalTimeRate);
-// };
-// 
-// var getUserMedia = function(dictionary, callback) {
-//   try {
-//     navigator.getUserMedia = 
-//       navigator.getUserMedia ||
-//       navigator.webkitGetUserMedia ||
-//       navigator.mozGetUserMedia;
-
-//     navigator.getUserMedia(dictionary, callback, error);
-//   } catch (e) {
-//     alert('getUserMedia threw exception :' + e);
-//   }
-// };
-
-
 var getUserAudio = function() {
-  // The user will be prompted whether he will permit the browser
-  // to record the audio. If given permission, this script will
-  // create a MediaStream object from user input. 
-  // The script then connects the audio source to the analyser
-  // node. Visualization is then run on ten times a second.
-  // NOTE that the source is not connected to any destination.
-  // This is allowed by Web Audio, and it just means that 
-  // the user audio won't be played back.
+  // navigator.mediaDevices.getUserMedia({audio: true})
+  //   .then(function(mediaStream) {
+  //     console.log('Getting user audio');
+  //     mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
 
-  navigator.mediaDevices.getUserMedia({audio: true})
-    .then(function(mediaStream) {
-      console.log('Getting user audio');
-      mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
+  //     analyser = audioContext.createAnalyser();
+  //     analyser.fftSize = 2048;
+  //     mediaStreamSource.connect( analyser );
 
-      analyser = audioContext.createAnalyser();
-      analyser.fftSize = 2048;
-      mediaStreamSource.connect( analyser );
+  //     setInterval(updatePitch, setIntervalTimeRate);
+  //   });
+  //   
+  console.log('inside GetUserAudio function');
 
-      setInterval(updatePitch, setIntervalTimeRate);
-    });
+  navigator.webkitGetUserMedia({audio: true}, function(mediaStream) {
+    console.log('Getting user audio');
+    mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
+
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 2048;
+    mediaStreamSource.connect( analyser );
+    // sourceNode.start(0);
+    isPlaying = true;
+    isLiveInput = true;
+
+    updatePitch();
+    setInterval(updatePitch, setIntervalTimeRate);
+  }, function(error) { console.log(error); });
 };
 
 var togglePlayback = function() {
@@ -264,6 +247,7 @@ var togglePlayback = function() {
   isPlaying = true;
   isLiveInput = false;
 
+  updatePitch();
   setInterval(updatePitch, setIntervalTimeRate);
 
   return 'stop';
@@ -357,9 +341,8 @@ var updatePitch = function( time ) {
   }
   var cycles = new Array;
   analyser.getFloatTimeDomainData( buf );
-  console.log('Buffer: ', buf);
+  // console.log('Buffer: ', buf);
   var ac = autoCorrelate( buf, audioContext.sampleRate );
-  // TODO: Paint confidence meter on canvasElem here.
 
   if (DEBUGCANVAS) {  // This draws the current waveform, useful for debugging
     waveCanvas.clearRect(0, 0, 512, 256);
@@ -420,11 +403,6 @@ var updatePitch = function( time ) {
       detuneAmount.innerHTML = Math.abs( detune );
     }
   }
-
-  // if (!window.requestAnimationFrame) {
-  //   window.requestAnimationFrame = window.webkitRequestAnimationFrame;
-  // }
-  // rafID = window.requestAnimationFrame( updatePitch );
 };
 
 var getMax = function(array) {
@@ -437,30 +415,57 @@ var getMax = function(array) {
   return max;
 };
 
-var factor = 256 / 11;
+var getAvgNote = function(notes) {
+  var sum = 0;
+  notes.forEach(function(note) {
+    sum += note;
+  });
+  return Math.round(sum / notes.length);
+};
 
+var factor = 256 / 13;
+var counter = 0;
+var avgNotes = [];
 // visualization of notes
 var drawNoteGraph = function() {
-  // var maxPitch = getMax(noteArray);
-  // console.log('max pitch is: ', maxPitch);
-
-  if (graphCanvas) {
-    noteCanvas.clearRect(0, 0, 2560, 256);
-
-    noteCanvas.strokeStyle = 'red';
-    noteCanvas.beginPath();
-    noteCanvas.moveTo(0, 0);
-    noteCanvas.lineTo(0, 256);
-    noteCanvas.moveTo(0, 256);
-    noteCanvas.lineTo(2560, 256);
-    noteCanvas.stroke();
-
-    noteCanvas.strokeStyle = 'black';
-    noteCanvas.beginPath();
-    noteCanvas.moveTo(0, 256 - noteArray[0] * factor);
-    for (var i = 5; i < 5 * noteArray.length; i = i + 5) {
-      noteCanvas.lineTo(i, 256 - noteArray[i / 5] * factor);
-    }
-    noteCanvas.stroke();
+  if (!graphCanvas) {
+    return;
   }
+
+  noteCanvas.clearRect(0, 0, 1000, 256);
+  noteCanvas.strokeStyle = 'red';
+  noteCanvas.beginPath();
+  noteCanvas.moveTo(0, 0);
+  noteCanvas.lineTo(0, 256);
+  noteCanvas.moveTo(0, 256);
+  noteCanvas.lineTo(1000, 256);
+  noteCanvas.stroke();
+
+  noteCanvas.strokeStyle = 'black';
+  noteCanvas.beginPath();
+
+  var remainder = counter % 60;
+  var seconds = (counter - counter % 60) / 60;
+
+  if (seconds === 0) {
+    avgNotes.push(noteArray[0]);
+  } else if (remainder === 0) {
+    avgNotes.push(getAvgNote(noteArray.slice((seconds - 1) * 60, seconds * 60)));
+  } else {
+    avgNotes.push(getAvgNote(noteArray.slice(seconds * 60)));
+  } 
+
+  console.log('avgNotes is: ', avgNotes);
+  noteCanvas.moveTo(0, 256 - (avgNotes[0] + 1) * factor);
+  for (var i = 1; i < counter + 1; i++) {
+    noteCanvas.lineTo(i, 256 - (avgNotes[i] + 1) * factor);
+  }
+  noteCanvas.stroke();
+
+  // noteCanvas.moveTo(0, 256 - (noteArray[0] + 1) * factor);
+  // for (var i = 5; i < 5 * noteArray.length; i = i + 5) {
+  //   noteCanvas.lineTo(i, 256 - (noteArray[i / 5] + 1) * factor);
+  // }
+
+  counter++;
 };
