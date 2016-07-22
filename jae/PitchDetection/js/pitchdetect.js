@@ -33,6 +33,7 @@ var theBuffer = null;
 var DEBUGCANVAS = null;
 var graphCanvas = null;
 var mediaStreamSource = null;
+var localStream = null; // Used when stopping microphone input
 var noteArray = [];
 var detectorElem, 
   canvasElem,
@@ -156,14 +157,17 @@ var toggleOscillator = function() {
 };
 
 var toggleLiveInput = function() {
+  
   if (isPlaying) {
     // stop playing and return
-    sourceNode.stop( 0 );
-    sourceNode = null;
+    // sourceNode.stop( 0 );
+    // sourceNode = null;
+    localStream.getAudioTracks()[0].stop( 0 ); // Stops the microphone
+    mediaStreamSource = null; // getUserMedia uses mediaStreamSource instead of sourceNode
     analyser = null;
     isPlaying = false;
 
-    return 'using live input!';
+    return 'stop live input';
     // if (!window.cancelAnimationFrame) {
     //   window.cancelAnimationFrame = window.webkitCancelAnimationFrame;
     // }
@@ -183,8 +187,7 @@ var toggleLiveInput = function() {
   
   getUserAudio();
 
-  return 'stop live input';
-  
+  return 'using live input!';
 };
 
 // var gotStream = function(stream) {
@@ -223,17 +226,46 @@ var getUserAudio = function() {
   // This is allowed by Web Audio, and it just means that 
   // the user audio won't be played back.
 
-  navigator.mediaDevices.getUserMedia({audio: true})
-    .then(function(mediaStream) {
+  if (navigator.mediaDevices.getUserMedia) {
+    
+    navigator.mediaDevices.getUserMedia({audio: true})
+      .then(function(mediaStream) {
+        console.log('Getting user audio');
+        localStream = mediaStream;
+        mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
+
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2048;
+        mediaStreamSource.connect( analyser );
+
+        isPlaying = true;
+
+        setInterval(updatePitch, setIntervalTimeRate);
+      });
+  
+  } else if (navigator.webkitGetUserMedia) {
+
+    navigator.webkitGetUserMedia({audio: true}, function(mediaStream) {
       console.log('Getting user audio');
-      mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
+      localStream = mediaStream;
+      mediaStreamSource = audioContext.createMediaStreamSource( mediaStream );
 
       analyser = audioContext.createAnalyser();
       analyser.fftSize = 2048;
       mediaStreamSource.connect( analyser );
 
+      isPlaying = true;
+
       setInterval(updatePitch, setIntervalTimeRate);
-    });
+
+    }, function(error) { console.log(error); });
+
+  } else {
+
+    alert('This browser does not support use audio input');
+
+  }
+
 };
 
 var togglePlayback = function() {
@@ -286,8 +318,7 @@ var frequencyFromNoteNumber = function( note ) {
 };
 
 var centsOffFromPitch = function( frequency, note ) {
-  return Math.floor( 1200 * Math.log( frequency / frequencyFromNoteNumber( note )) 
-    / Math.log(2) );
+  return Math.floor( 1200 * Math.log( frequency / frequencyFromNoteNumber( note )) / Math.log(2) );
 };
 
 var MIN_SAMPLES = 0;  // will be initialized when AudioContext is created.
