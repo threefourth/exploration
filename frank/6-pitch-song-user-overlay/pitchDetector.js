@@ -29,6 +29,7 @@ var analyser = audioContext.createAnalyser();
 
 var noteArray = []; // Contains notes taken 60 times a second
 var avgNoteArray = []; // Average of notes per second
+var avgNoteArrayLastFive;  // Used for visualizer
 
 var rafID = null;
 var tracks = null;
@@ -143,6 +144,8 @@ var getMax = function(array) {
   return max;
 };
 
+var avgNoteCount = 0;
+
 var getAvgNote = function() {
   
   // Get all notes in the most recent second
@@ -173,13 +176,25 @@ var getAvgNote = function() {
   });
 
   var avgNote = {
-    id: avgNoteArray.length,
+    id: avgNoteCount++,
     value: Math.round(sum / noteSet.length)
   };
 
-  console.log( avgNote.value );
+  console.log('Pushing in: ', avgNote.value );
   avgNoteArray.push( avgNote );
+
+  // Use below in the D3 visualizer if you only
+  // want the last five items to appear
+  avgNoteArrayLastFive = avgNoteArray.slice(-5);
 };
+
+
+
+
+
+
+
+
 
 
 
