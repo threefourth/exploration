@@ -8,8 +8,12 @@ window.onload = function() {
   // total notes that are being graphed
 
   var notesArray = [];
-  var svgWidth;
-  var svgHeight;
+  var svgWidth = 1000;
+  var svgHeight = 500;
+
+  var graph = d3.select('.visualizer').append('svg')
+    .attr('width', svgWidth)
+    .attr('height', svgHeight);
 
   // Creates a random integer 1-12 every second and 
   // pushes it into notesArray. Each note needs an
@@ -26,6 +30,77 @@ window.onload = function() {
 
   // Use D3 to graph notesArray
   // Should scale dynamically
-  var updateGraph = function() {};
+  var updateGraph = function() {
+    console.log(notesArray);
+    // Redefine the scale functions so that 
+    // the graph will scale dynamically (hopefully!)
+    var xScale = d3.scaleLinear()
+      .domain([0, notesArray.length])
+      .range([0, svgWidth]);
 
+    var yScale = d3.scaleLinear()
+      .domain([0, 12])
+      .range([0, svgHeight]);
+
+    // Bind each note object in notesArray
+    // to a rect svg element
+    var notes = graph.selectAll('rect')
+      .data(notesArray);
+
+    // D3 General Update Pattern
+
+    // ENTER
+    notes.enter()
+      .append('rect')
+      .attr('x', function(d) {
+        return xScale(d.id);
+      })
+      .attr('y', function(d) {
+        return yScale(d.value);
+      })
+      .attr('width', svgWidth / notesArray.length)
+      .attr('height', 10)
+      .attr('fill', 'blue');
+
+    // UPDATE
+    notes
+      .transition()
+      .duration(300)
+      .attr('x', function(d) {
+        return xScale(d.id);
+      })
+      .attr('y', function(d) {
+        return yScale(d.value);
+      })
+      .attr('width', svgWidth / notesArray.length)
+      .attr('height', 10);   
+  };
+
+  // Generates a random note every second
+  // and graphs it
+  var startGraph = function() {
+    
+    setInterval(function() {
+      generateNote();
+      updateGraph();
+    }, 1000);
+
+  };
+
+  startGraph();
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
