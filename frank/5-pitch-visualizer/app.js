@@ -15,7 +15,7 @@ $(document).ready(function() {
 
   // Web Audio setup and pitch detection variables
   // are in pitchDetector.js
-  // NOTE: noteArray, which is used by the visualizer,
+  // NOTE: avgNoteArray, which is used by the visualizer,
   // is defined and updated in pitchDetector.js
 
   // Loading local music as an ArrayBuffer, 
@@ -32,12 +32,13 @@ $(document).ready(function() {
   };
 
   var playSong = function(audioData) {
-    console.log('Inside: ', audioData);
+    
     audioContext.decodeAudioData(audioData, function(arrayBuffer) {
       var source = audioContext.createBufferSource();
       source.buffer = arrayBuffer;
 
-      source.connect(audioContext.destination);
+      source.connect(analyser);
+      analyser.connect(audioContext.destination);
 
       source.start();
     });
@@ -45,39 +46,40 @@ $(document).ready(function() {
 
   $('#fileInput').change(function(event) {
     onFileChange(playSong, event);
+    startGraph();
   });
 
   // Creates a random integer 1-12 every second and 
-  // pushes it into noteArray. Each note needs an
+  // pushes it into avgNoteArray. Each note needs an
   // id so that D3 can persistently bind a DOM element
   // to each note
   var generateNote = function() {
     var note = {
-      id: noteArray.length,
+      id: avgNoteArray.length,
       value: Math.floor(Math.random() * 12) + 1
     };
 
-    noteArray.push(note);
+    avgNoteArray.push(note);
   };
 
-  // Use D3 to graph noteArray
+  // Use D3 to graph avgNoteArray
   // Should scale dynamically
   var updateGraph = function() {
-    console.log(noteArray);
+    
     // Redefine the scale functions so that 
     // the graph will scale dynamically (hopefully!)
     var xScale = d3.scaleLinear()
-      .domain([0, noteArray.length])
+      .domain([0, avgNoteArray.length])
       .range([0, svgWidth]);
 
     var yScale = d3.scaleLinear()
-      .domain([0, 12])
+      .domain([0, 150])
       .range([0, svgHeight]);
 
-    // Bind each note object in noteArray
+    // Bind each note object in avgNoteArray
     // to a rect svg element
     var notes = graph.selectAll('rect')
-      .data(noteArray);
+      .data(avgNoteArray);
 
     // D3 General Update Pattern
 
@@ -90,7 +92,7 @@ $(document).ready(function() {
       .attr('y', function(d) {
         return yScale(d.value);
       })
-      .attr('width', svgWidth / noteArray.length)
+      .attr('width', svgWidth / avgNoteArray.length)
       .attr('height', 10)
       .attr('fill', 'red');
 
@@ -104,7 +106,7 @@ $(document).ready(function() {
       .attr('y', function(d) {
         return yScale(d.value);
       })
-      .attr('width', svgWidth / noteArray.length)
+      .attr('width', svgWidth / avgNoteArray.length)
       .attr('height', 10)
       .attr('fill', 'blue');   
   };
@@ -113,14 +115,15 @@ $(document).ready(function() {
   // and graphs it
   var startGraph = function() {
     
-    setInterval(function() {
-      generateNote();
-      updateGraph();
-    }, 1000);
+    // Calculate the note 60 times a second
+    // and push each note into the noteArray
+    setInterval(updatePitch, setIntervalTimeRate);
 
+    // Calculate the per-second average note
+    // and graph that note
+    setInterval(getAvgNote, 1000);
+    setInterval(updateGraph, 1000);
   };
-
-  startGraph();
 
 });
 

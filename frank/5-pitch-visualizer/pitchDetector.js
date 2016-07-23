@@ -27,26 +27,8 @@ var setIntervalTimeRate = 1000 / 60; // milliseconds
 var audioContext = new (window.AudioContext || window.webkitAudioContext)();
 var analyser = audioContext.createAnalyser();
 
-var isPlaying = false;
-var sourceNode = null;
-var analyser = null;
-var theBuffer = null;
-var DEBUGCANVAS = null;
-var graphCanvas = null;
-var mediaStreamSource = null;
-var noteArray = [];
-var detectorElem, 
-    canvasElem,
-    waveCanvas,
-    noteCanvas,
-    pitchElem,
-    noteElem,
-    detuneElem,
-    detuneAmount;
-
-var error = function() {
-  alert('Stream generation failed.');
-};
+var noteArray = []; // Contains notes taken 60 times a second
+var avgNoteArray = []; // Average of notes per second
 
 var rafID = null;
 var tracks = null;
@@ -130,52 +112,25 @@ var autoCorrelate = function( buf, sampleRate ) {
 };
 
 var updatePitch = function( time ) {
-  if (!isPlaying) {
-    return;
-  }
+
   var cycles = new Array;
   analyser.getFloatTimeDomainData( buf );
+
   var ac = autoCorrelate( buf, audioContext.sampleRate );
 
-  if (ac === -1) {
-    detectorElem.className = 'vague';
-    // console.log('vague autocorrelation');
-    pitchElem.innerText = '--';
-    noteElem.innerText = '-';
-    detuneElem.className = '';
-    detuneAmount.innerText = '--';
-  } else {
-    detectorElem.className = 'confident';
-    // console.log('confident autocorrelation');
-    pitch = ac;
-    pitchElem.innerText = Math.round( pitch );
+  pitch = ac;
 
+  var note = noteFromPitch( pitch );
 
-    var note = noteFromPitch( pitch );
-    noteElem.innerHTML = noteStrings[note % 12];
+  // store pitch into noteArray
+  // in order to solve the octave issue
+  // we are using the raw note value instead of (note % 12)
 
-    // store pitch into noteArray
-    // 
-    // in order to solve the octave issue
-    // we are using the raw note value instead of (note % 12)
-    noteArray.push(note);
-    // console.log('note array: ', noteArray);
-    drawNoteGraph();
-
-    var detune = centsOffFromPitch( pitch, note );
-    if (detune === 0 ) {
-      detuneElem.className = '';
-      detuneAmount.innerHTML = '--';
-    } else {
-      if (detune < 0) {
-        detuneElem.className = 'flat';
-      } else {
-        detuneElem.className = 'sharp';
-      }
-      detuneAmount.innerHTML = Math.abs( detune );
-    }
+  if (isNaN(note)) {
+    note = 0;
   }
 
+  noteArray.push(note);
 };
 
 var getMax = function(array) {
@@ -188,14 +143,44 @@ var getMax = function(array) {
   return max;
 };
 
-var getAvgNote = function(notes) {
+var getAvgNote = function() {
+  
+  // Get all notes in the most recent second
+  var startIndex = avgNoteArray.length * 60;
+  var noteSet = noteArray.slice(startIndex, startIndex + 60);
+
+  // Remove the zero value notes since they
+  // represent silence
+  noteSet = noteSet.filter(function(note) {
+    if (note !== 0) {
+      return note;
+    }
+  });
+
+  // If all notes in a noteSet is zero
+  // (and hence filtered noteSet is empty)
+  // give noteSet a single value of zero
+  if (noteSet.length === 0) {
+    noteSet = [0];
+  }
+
+  console.log(noteSet);
+
   var sum = 0;
-  notes.forEach(function(note) {
+
+  noteSet.forEach(function(note) {
     sum += note;
   });
-  return Math.round(sum / notes.length);
+
+  var avgNote = {
+    id: avgNoteArray.length,
+    value: Math.round(sum / noteSet.length)
+  };
+
+  console.log( avgNote.value );
+  avgNoteArray.push( avgNote );
 };
 
-var avgNotes = [];
+
 
 
