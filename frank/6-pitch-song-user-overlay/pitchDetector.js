@@ -27,9 +27,9 @@ var setIntervalTimeRate = 1000 / 60; // milliseconds
 // Variables for the MP3 Song
 var songAudioContext = new (window.AudioContext || window.webkitAudioContext)();
 var songAnalyser = songAudioContext.createAnalyser();
-var noteArray = []; // Contains notes taken 60 times a second
-var avgNoteArray = []; // Average of notes per second
-var avgNoteArrayLastFive;  // Used for visualizer
+var songNoteArray = []; // Contains notes taken 60 times a second
+var songAvgNoteArray = []; // Average of notes per second
+var songAvgNoteArrayLastFive;  // Used for visualizer
 
 // Variables for User Input Audio
 var userAudioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -123,7 +123,7 @@ var autoCorrelate = function( buf, sampleRate ) {
   //  var best_frequency = sampleRate/bestOffset;
 };
 
-var updatePitch = function( analyser, context, buf, buflen ) {
+var updatePitch = function( analyser, context, noteArray, buf, buflen ) {
 
   var cycles = new Array;
   analyser.getFloatTimeDomainData( buf );
@@ -143,6 +143,8 @@ var updatePitch = function( analyser, context, buf, buflen ) {
   }
 
   noteArray.push(note);
+  
+  return noteArray;
 };
 
 var getMax = function(array) {
@@ -157,10 +159,10 @@ var getMax = function(array) {
 
 var avgNoteCount = 0;
 
-var getAvgNote = function() {
+var getAvgNote = function( noteArray ) {
   
   // Get all notes in the most recent second
-  var startIndex = avgNoteArray.length * 60;
+  var startIndex = noteArray.length * 60;
   var noteSet = noteArray.slice(startIndex, startIndex + 60);
 
   // Remove the zero value notes since they
@@ -192,11 +194,13 @@ var getAvgNote = function() {
   };
 
   console.log('Pushing in: ', avgNote.value );
-  avgNoteArray.push( avgNote );
+  noteArray.push( avgNote );
 
   // Use below in the D3 visualizer if you only
   // want the last five items to appear
-  avgNoteArrayLastFive = avgNoteArray.slice(-5);
+  // avgNoteArrayLastFive = avgNoteArray.slice(-5);
+
+  return noteArray;
 };
 
 
@@ -215,7 +219,6 @@ var getUserAudio = function() {
         userAnalyser.fftSize = 2048;
         mediaStreamSource.connect( userAnalyser );
 
-        updatePitch( userAnalyser, userAudioContext, userBuf, userBuflen );
         // updatePitchID = setInterval(updatePitch, setIntervalTimeRate);
       });
   
@@ -230,7 +233,6 @@ var getUserAudio = function() {
       userAnalyser.fftSize = 2048;
       mediaStreamSource.connect( userAnalyser );
 
-      updatePitch( userAnalyser, userAudioContext, userBuf, userBuflen );
       // updatePitchID = setInterval(updatePitch, setIntervalTimeRate);
 
     }, function(error) { console.log(error); });

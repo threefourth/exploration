@@ -76,7 +76,7 @@ $(document).ready(function() {
 
   // Use D3 to graph avgNoteArray
   // Should scale dynamically
-  var updateGraph = function() {
+  var updateGraph = function( avgNoteArray ) {
     
     // Redefine the scale functions so that 
     // the graph will scale dynamically (hopefully!)
@@ -105,7 +105,7 @@ $(document).ready(function() {
         return xScale(i);
       })
       .attr('y', function(d) {
-        console.log('Entering at ', d.value);
+        // console.log('Entering at ', d.value);
         return yScale(d.value);
       })
       .attr('width', svgWidth / avgNoteArray.length)
@@ -143,18 +143,38 @@ $(document).ready(function() {
   var startGraph = function() {
     
     // Start obtaining user audio
-    getUserAudio();
+    // getUserAudio();
 
     // Calculate the note 60 times a second
-    // and push each note into the noteArray
+    // and push each note into the noteArray.
+    // Do this process for both the MP3 and the 
+    // user input audio
     updateSongPitchIntervalID = setInterval(function() {
-      updatePitch(songAnalyser, songAudioContext, songBuf, songBuflen);
+
+      // Get pitch for MP3 audio
+      songNoteArray = updatePitch( songAnalyser, songAudioContext, songNoteArray, songBuf, songBuflen );
+
+      // Get pitch for user input
+      // updatePitch( userAnalyser, userAudioContext, userBuf, userBuflen );
+
     }, setIntervalTimeRate);
 
     // Calculate the per-second average note
-    // and graph that note
-    getSongAvgNoteIntervalID = setInterval(getAvgNote, 1000);
-    updateSongGraphIntervalID = setInterval(updateGraph, 1000);
+    // and graph that note. Perform this process
+    // for MP3 and user input audio
+
+    // Calculate avgNote and graph it for MP3
+    getSongAvgNoteIntervalID = setInterval( function() {
+      songAvgNoteArray = getAvgNote( songNoteArray );
+    }, 1000 );
+    updateSongGraphIntervalID = setInterval( function() {
+      updateGraph( songAvgNoteArray );
+    }, 1000);
+
+    // Calculate avgNote and graph it for user input
+    // getUserAvgNoteIntervalID = setInterval( function() {
+    //   getAvgNote( userAvgNoteArray );
+    // }, 1000);
   };
 
 });
