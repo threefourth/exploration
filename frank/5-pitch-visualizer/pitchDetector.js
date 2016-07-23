@@ -22,10 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-window.AudioContext = window.AudioContext || window.webkitAudioContext;
-
 var setIntervalTimeRate = 1000 / 60; // milliseconds
-var audioContext = null;
+
+var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+var analyser = audioContext.createAnalyser();
+
 var isPlaying = false;
 var sourceNode = null;
 var analyser = null;
@@ -33,8 +34,6 @@ var theBuffer = null;
 var DEBUGCANVAS = null;
 var graphCanvas = null;
 var mediaStreamSource = null;
-var localStream = null; // Used when stopping microphone input
-var updatePitchID = null; // Used to stop the updateGraph interval
 var noteArray = [];
 var detectorElem, 
     canvasElem,
@@ -45,161 +44,9 @@ var detectorElem,
     detuneElem,
     detuneAmount;
 
-/* 
-  Code that was previously in window.onload was moved to PitchVisualizer
-  component's componentDidMount function
-*/
-
 var error = function() {
   alert('Stream generation failed.');
 };
-
-var toggleLiveInput = function() {
-  
-  if (isPlaying) {
-    // stop playing and return
-    // sourceNode.stop( 0 );
-    // sourceNode = null;
-    localStream.getAudioTracks()[0].stop( 0 ); // Stops the microphone
-    mediaStreamSource = null; // getUserMedia uses mediaStreamSource instead of sourceNode
-    analyser = null;
-    isPlaying = false;
-
-    return 'stop live input';
-    // if (!window.cancelAnimationFrame) {
-    //   window.cancelAnimationFrame = window.webkitCancelAnimationFrame;
-    // }
-    // window.cancelAnimationFrame( rafID );
-  }
-  // getUserMedia({
-  //   'audio': {
-  //     'mandatory': {
-  //       'googEchoCancellation': 'false',
-  //       'googAutoGainControl': 'false',
-  //       'googNoiseSuppression': 'false',
-  //       'googHighpassFilter': 'false'
-  //     },
-  //     'optional': []
-  //   },
-  // }, gotStream);
-  
-  getUserAudio();
-
-  return 'using live input!';
-};
-
-// var gotStream = function(stream) {
-//   // Create an AudioNode from the stream.
-//   mediaStreamSource = audioContext.createMediaStreamSource(stream);
-
-//   // Connect it to the destination.
-//   analyser = audioContext.createAnalyser();
-//   analyser.fftSize = 2048;
-//   mediaStreamSource.connect( analyser );
-  
-//   setInterval(updatePitch, setIntervalTimeRate);
-// };
-// 
-// var getUserMedia = function(dictionary, callback) {
-//   try {
-//     navigator.getUserMedia = 
-//       navigator.getUserMedia ||
-//       navigator.webkitGetUserMedia ||
-//       navigator.mozGetUserMedia;
-
-//     navigator.getUserMedia(dictionary, callback, error);
-//   } catch (e) {
-//     alert('getUserMedia threw exception :' + e);
-//   }
-// };
-
-
-var getUserAudio = function() {
-  // The user will be prompted whether he will permit the browser
-  // to record the audio. If given permission, this script will
-  // create a MediaStream object from user input. 
-  // The script then connects the audio source to the analyser
-  // node. Visualization is then run on ten times a second.
-  // NOTE that the source is not connected to any destination.
-  // This is allowed by Web Audio, and it just means that 
-  // the user audio won't be played back.
-
-  if (navigator.mediaDevices.getUserMedia) {
-    
-    navigator.mediaDevices.getUserMedia({audio: true})
-      .then(function(mediaStream) {
-        console.log('Getting user audio');
-        localStream = mediaStream;
-        mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
-
-        analyser = audioContext.createAnalyser();
-        analyser.fftSize = 2048;
-        mediaStreamSource.connect( analyser );
-
-        isPlaying = true;
-
-        updatePitch();
-        updatePitchID = setInterval(updatePitch, setIntervalTimeRate);
-      });
-  
-  } else if (navigator.webkitGetUserMedia) {
-
-    navigator.webkitGetUserMedia({audio: true}, function(mediaStream) {
-      console.log('Getting user audio');
-      localStream = mediaStream;
-      mediaStreamSource = audioContext.createMediaStreamSource( mediaStream );
-
-      analyser = audioContext.createAnalyser();
-      analyser.fftSize = 2048;
-      mediaStreamSource.connect( analyser );
-
-      isPlaying = true;
-
-      updatePitch();
-      updatePitchID = setInterval(updatePitch, setIntervalTimeRate);
-
-    }, function(error) { console.log(error); });
-
-  } else {
-
-    alert('This browser does not support use audio input');
-
-  }
-
-};
-
-// var togglePlayback = function() {
-//   if (isPlaying) {
-//     //stop playing and return
-//     sourceNode.stop( 0 );
-//     sourceNode = null;
-//     analyser = null;
-//     isPlaying = false;
-
-//     // if (!window.cancelAnimationFrame) {
-//     //   window.cancelAnimationFrame = window.webkitCancelAnimationFrame;
-//     // }
-//     // window.cancelAnimationFrame( rafID );
-    
-//     return 'start';
-//   }
-
-//   sourceNode = audioContext.createBufferSource();
-//   sourceNode.buffer = theBuffer;
-//   sourceNode.loop = true;
-
-//   analyser = audioContext.createAnalyser();
-//   analyser.fftSize = 2048;
-//   sourceNode.connect( analyser );
-//   analyser.connect( audioContext.destination );
-//   sourceNode.start( 0 );
-//   isPlaying = true;
-//   isLiveInput = false;
-
-//   setInterval(updatePitch, setIntervalTimeRate);
-
-//   return 'stop';
-// };
 
 var rafID = null;
 var tracks = null;
@@ -290,30 +137,6 @@ var updatePitch = function( time ) {
   analyser.getFloatTimeDomainData( buf );
   var ac = autoCorrelate( buf, audioContext.sampleRate );
 
-  if (DEBUGCANVAS) {  // This draws the current waveform, useful for debugging
-    waveCanvas.clearRect(0, 0, 512, 256);
-    waveCanvas.strokeStyle = 'red';
-    waveCanvas.beginPath();
-    waveCanvas.moveTo(0, 0);
-    waveCanvas.lineTo(0, 256);
-    waveCanvas.moveTo(128, 0);
-    waveCanvas.lineTo(128, 256);
-    waveCanvas.moveTo(256, 0);
-    waveCanvas.lineTo(256, 256);
-    waveCanvas.moveTo(384, 0);
-    waveCanvas.lineTo(384, 256);
-    waveCanvas.moveTo(512, 0);
-    waveCanvas.lineTo(512, 256);
-    waveCanvas.stroke();
-    waveCanvas.strokeStyle = 'black';
-    waveCanvas.beginPath();
-    waveCanvas.moveTo(0, buf[0]);
-    for (var i = 1; i < 512; i++) {
-      waveCanvas.lineTo(i, 128 + (buf[i] * 128));
-    }
-    waveCanvas.stroke();
-  }
-
   if (ac === -1) {
     detectorElem.className = 'vague';
     // console.log('vague autocorrelation');
@@ -353,10 +176,6 @@ var updatePitch = function( time ) {
     }
   }
 
-  // if (!window.requestAnimationFrame) {
-  //   window.requestAnimationFrame = window.webkitRequestAnimationFrame;
-  // }
-  // rafID = window.requestAnimationFrame( updatePitch );
 };
 
 var getMax = function(array) {
@@ -377,51 +196,6 @@ var getAvgNote = function(notes) {
   return Math.round(sum / notes.length);
 };
 
-var counter = 0;
 var avgNotes = [];
 
-// visualization of notes
-var drawNoteGraph = function() {
-  if (!graphCanvas) {
-    return;
-  }
 
-  var factor = 256 / getMax(noteArray);
-
-  noteCanvas.clearRect(0, 0, 2560, 256);
-  noteCanvas.strokeStyle = 'red';
-  noteCanvas.beginPath();
-  noteCanvas.moveTo(0, 0);
-  noteCanvas.lineTo(0, 256);
-  noteCanvas.moveTo(0, 256);
-  noteCanvas.lineTo(2560, 256);
-  noteCanvas.stroke();
-
-  noteCanvas.strokeStyle = 'black';
-  noteCanvas.beginPath();
-
-  var remainder = counter % 60;
-  var seconds = (counter - counter % 60) / 60;
-
-  if (seconds === 0) {
-    avgNotes.push(noteArray[0]);
-  } else if (remainder === 0) {
-    avgNotes.push(getAvgNote(noteArray.slice((seconds - 1) * 60, seconds * 60)));
-  } else {
-    avgNotes.push(getAvgNote(noteArray.slice(seconds * 60)));
-  } 
-
-  console.log('avgNotes is: ', avgNotes);
-  noteCanvas.moveTo(0, 256 - (avgNotes[0]) * factor);
-  for (var i = 1; i < counter + 1; i++) {
-    noteCanvas.lineTo(i, 256 - (avgNotes[i]) * factor);
-  }
-  noteCanvas.stroke();
-
-  // noteCanvas.moveTo(0, 256 - (noteArray[0] + 1) * factor);
-  // for (var i = 5; i < 5 * noteArray.length; i = i + 5) {
-  //   noteCanvas.lineTo(i, 256 - (noteArray[i / 5] + 1) * factor);
-  // }
-
-  counter++;
-};

@@ -13,12 +13,10 @@ $(document).ready(function() {
     .attr('width', svgWidth)
     .attr('height', svgHeight);
 
-  // Music related variables
-  var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  var analyser = audioContext.createAnalyser();
-  
-  var notesArray = [];
-
+  // Web Audio setup and pitch detection variables
+  // are in pitchDetector.js
+  // NOTE: noteArray, which is used by the visualizer,
+  // is defined and updated in pitchDetector.js
 
   // Loading local music as an ArrayBuffer, 
   // which can be decoded by Web Audio
@@ -50,36 +48,36 @@ $(document).ready(function() {
   });
 
   // Creates a random integer 1-12 every second and 
-  // pushes it into notesArray. Each note needs an
+  // pushes it into noteArray. Each note needs an
   // id so that D3 can persistently bind a DOM element
   // to each note
   var generateNote = function() {
     var note = {
-      id: notesArray.length,
+      id: noteArray.length,
       value: Math.floor(Math.random() * 12) + 1
     };
 
-    notesArray.push(note);
+    noteArray.push(note);
   };
 
-  // Use D3 to graph notesArray
+  // Use D3 to graph noteArray
   // Should scale dynamically
   var updateGraph = function() {
-    console.log(notesArray);
+    console.log(noteArray);
     // Redefine the scale functions so that 
     // the graph will scale dynamically (hopefully!)
     var xScale = d3.scaleLinear()
-      .domain([0, notesArray.length])
+      .domain([0, noteArray.length])
       .range([0, svgWidth]);
 
     var yScale = d3.scaleLinear()
       .domain([0, 12])
       .range([0, svgHeight]);
 
-    // Bind each note object in notesArray
+    // Bind each note object in noteArray
     // to a rect svg element
     var notes = graph.selectAll('rect')
-      .data(notesArray);
+      .data(noteArray);
 
     // D3 General Update Pattern
 
@@ -92,7 +90,7 @@ $(document).ready(function() {
       .attr('y', function(d) {
         return yScale(d.value);
       })
-      .attr('width', svgWidth / notesArray.length)
+      .attr('width', svgWidth / noteArray.length)
       .attr('height', 10)
       .attr('fill', 'red');
 
@@ -106,7 +104,7 @@ $(document).ready(function() {
       .attr('y', function(d) {
         return yScale(d.value);
       })
-      .attr('width', svgWidth / notesArray.length)
+      .attr('width', svgWidth / noteArray.length)
       .attr('height', 10)
       .attr('fill', 'blue');   
   };
