@@ -410,7 +410,7 @@ var updatePitch = function( time ) {
     noteElem.innerHTML = noteStrings[note % 12];
 
     // store pitch into noteArray
-    noteArray.push(note % 12);
+    noteArray.push(note);
     console.log('note array: ', noteArray);
     drawNoteGraph();
 
@@ -447,7 +447,7 @@ var getAvgNote = function(notes) {
   return Math.round(sum / notes.length);
 };
 
-var factor = 256 / 13;
+
 var counter = 0;
 var avgNotes = [];
 // visualization of notes
@@ -455,6 +455,8 @@ var drawNoteGraph = function() {
   if (!graphCanvas) {
     return;
   }
+
+  var factor = 256 / getMax(noteArray);
 
   noteCanvas.clearRect(0, 0, 1000, 256);
   noteCanvas.strokeStyle = 'red';
@@ -480,9 +482,9 @@ var drawNoteGraph = function() {
   } 
 
   console.log('avgNotes is: ', avgNotes);
-  noteCanvas.moveTo(0, 256 - (avgNotes[0] + 1) * factor);
+  noteCanvas.moveTo(0, 256 - (avgNotes[0]) * factor);
   for (var i = 1; i < counter + 1; i++) {
-    noteCanvas.lineTo(i, 256 - (avgNotes[i] + 1) * factor);
+    noteCanvas.lineTo(i, 256 - (avgNotes[i]) * factor);
   }
   noteCanvas.stroke();
 
