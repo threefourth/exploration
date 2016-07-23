@@ -1,20 +1,53 @@
-// Lets try this without using jQuery's document.ready
-
-window.onload = function() {
+$(document).ready(function() {
 
   // Goal: create a dynamically scaling graph that
   // creates rectangles with y-position equal to the 
   // note integer and x-width scaled to the number of
   // total notes that are being graphed
 
-  var notesArray = [];
+  // Create SVG element
   var svgWidth = 1000;
   var svgHeight = 500;
 
-  // Create SVG element
-  var graph = d3.select('.visualizer').append('svg')
+  var graph = d3.select('#visualizer').append('svg')
     .attr('width', svgWidth)
     .attr('height', svgHeight);
+
+  // Music related variables
+  var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  var analyser = audioContext.createAnalyser();
+  
+  var notesArray = [];
+
+
+  // Loading local music as an ArrayBuffer, 
+  // which can be decoded by Web Audio
+  var onFileChange = function(callback, event) {
+    var reader = new FileReader();
+    // console.log(event.target.files);
+    reader.readAsArrayBuffer(event.target.files[0]);
+
+    reader.onload = function(e) {
+      // console.log(e.target.result);
+      callback(e.target.result);
+    };
+  };
+
+  var playSong = function(audioData) {
+    console.log('Inside: ', audioData);
+    audioContext.decodeAudioData(audioData, function(arrayBuffer) {
+      var source = audioContext.createBufferSource();
+      source.buffer = arrayBuffer;
+
+      source.connect(audioContext.destination);
+
+      source.start();
+    });
+  };
+
+  $('#fileInput').change(function(event) {
+    onFileChange(playSong, event);
+  });
 
   // Creates a random integer 1-12 every second and 
   // pushes it into notesArray. Each note needs an
@@ -90,7 +123,8 @@ window.onload = function() {
   };
 
   startGraph();
-};
+
+});
 
 
 
