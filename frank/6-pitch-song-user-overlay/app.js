@@ -31,18 +31,18 @@ $(document).ready(function() {
     };
   };
 
-  var updatePitchIntervalID = null;
-  var getAvgNoteIntervalID = null;
-  var updateGraphIntervalID = null; 
+  var updateSongPitchIntervalID = null;
+  var getSongAvgNoteIntervalID = null;
+  var updateSongGraphIntervalID = null; 
 
   var playSong = function(audioData) {
     
-    audioContext.decodeAudioData(audioData, function(arrayBuffer) {
-      var source = audioContext.createBufferSource();
+    songAudioContext.decodeAudioData(audioData, function(arrayBuffer) {
+      var source = songAudioContext.createBufferSource();
       source.buffer = arrayBuffer;
 
-      source.connect(analyser);
-      analyser.connect(audioContext.destination);
+      source.connect(songAnalyser);
+      songAnalyser.connect(songAudioContext.destination);
 
       source.start();
 
@@ -142,14 +142,19 @@ $(document).ready(function() {
   // and graphs it
   var startGraph = function() {
     
+    // Start obtaining user audio
+    getUserAudio();
+
     // Calculate the note 60 times a second
     // and push each note into the noteArray
-    updatePitchIntervalID = setInterval(updatePitch, setIntervalTimeRate);
+    updateSongPitchIntervalID = setInterval(function() {
+      updatePitch(songAnalyser, songAudioContext, songBuf, songBuflen);
+    }, setIntervalTimeRate);
 
     // Calculate the per-second average note
     // and graph that note
-    getAvgNoteIntervalID = setInterval(getAvgNote, 1000);
-    updateGraphIntervalID = setInterval(updateGraph, 1000);
+    getSongAvgNoteIntervalID = setInterval(getAvgNote, 1000);
+    updateSongGraphIntervalID = setInterval(updateGraph, 1000);
   };
 
 });

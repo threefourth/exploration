@@ -24,17 +24,28 @@ SOFTWARE.
 
 var setIntervalTimeRate = 1000 / 60; // milliseconds
 
-var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-var analyser = audioContext.createAnalyser();
-
+// Variables for the MP3 Song
+var songAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+var songAnalyser = songAudioContext.createAnalyser();
 var noteArray = []; // Contains notes taken 60 times a second
 var avgNoteArray = []; // Average of notes per second
 var avgNoteArrayLastFive;  // Used for visualizer
 
-var rafID = null;
-var tracks = null;
-var buflen = 1024;
-var buf = new Float32Array( buflen );
+// Variables for User Input Audio
+var userAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+var userAnalyser = userAudioContext.createAnalyser();
+var userNoteArray = [];
+var userAvgNoteArray = [];
+var userAvgNoteArrayLastFive;
+
+// Variables for the Pitch Detector
+// MP3 Variables
+var songBuflen = 1024;
+var songBuf = new Float32Array( songBuflen );
+
+// User Input Variables
+var userBuflen = 1024;
+var userBuf = new Float32Array( userBuflen );
 
 var noteStrings = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
@@ -112,12 +123,12 @@ var autoCorrelate = function( buf, sampleRate ) {
   //  var best_frequency = sampleRate/bestOffset;
 };
 
-var updatePitch = function( time ) {
+var updatePitch = function( analyser, context, buf, buflen ) {
 
   var cycles = new Array;
   analyser.getFloatTimeDomainData( buf );
 
-  var ac = autoCorrelate( buf, audioContext.sampleRate );
+  var ac = autoCorrelate( buf, context.sampleRate );
 
   pitch = ac;
 
@@ -189,6 +200,48 @@ var getAvgNote = function() {
 };
 
 
+// Use user audio and visualizer it
+var getUserAudio = function() {
+
+  if (navigator.mediaDevices.getUserMedia) {
+    
+    navigator.mediaDevices.getUserMedia({audio: true})
+      .then(function(mediaStream) {
+        console.log('Getting user audio');
+        localStream = mediaStream;
+        mediaStreamSource = userAudioContext.createMediaStreamSource(mediaStream);
+
+        userAnalyser = userAudioContext.createAnalyser();
+        userAnalyser.fftSize = 2048;
+        mediaStreamSource.connect( userAnalyser );
+
+        updatePitch( userAnalyser, userAudioContext, userBuf, userBuflen );
+        // updatePitchID = setInterval(updatePitch, setIntervalTimeRate);
+      });
+  
+  } else if (navigator.webkitGetUserMedia) {
+
+    navigator.webkitGetUserMedia({audio: true}, function(mediaStream) {
+      console.log('Getting user audio');
+      localStream = mediaStream;
+      mediaStreamSource = audioContext.createMediaStreamSource( mediaStream );
+
+      userAnalyser = userAudioContext.createAnalyser();
+      userAnalyser.fftSize = 2048;
+      mediaStreamSource.connect( userAnalyser );
+
+      updatePitch( userAnalyser, userAudioContext, userBuf, userBuflen );
+      // updatePitchID = setInterval(updatePitch, setIntervalTimeRate);
+
+    }, function(error) { console.log(error); });
+
+  } else {
+
+    alert('This browser does not support use audio input');
+
+  }
+
+};
 
 
 
