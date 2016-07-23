@@ -11,6 +11,7 @@ window.onload = function() {
   var svgWidth = 1000;
   var svgHeight = 500;
 
+  // Create SVG element
   var graph = d3.select('.visualizer').append('svg')
     .attr('width', svgWidth)
     .attr('height', svgHeight);
@@ -60,12 +61,12 @@ window.onload = function() {
       })
       .attr('width', svgWidth / notesArray.length)
       .attr('height', 10)
-      .attr('fill', 'blue');
+      .attr('fill', 'red');
 
     // UPDATE
     notes
       .transition()
-      .duration(300)
+      .ease(d3.easeSin)
       .attr('x', function(d) {
         return xScale(d.id);
       })
@@ -73,7 +74,8 @@ window.onload = function() {
         return yScale(d.value);
       })
       .attr('width', svgWidth / notesArray.length)
-      .attr('height', 10);   
+      .attr('height', 10)
+      .attr('fill', 'blue');   
   };
 
   // Generates a random note every second
