@@ -11,7 +11,7 @@ $(document).ready(function() {
 
   var graph = d3.select('#visualizer').append('svg')
     .attr('width', svgWidth)
-    .attr('height', svgHeight);
+    .attr('height', svgHeight + 100);
 
   // Web Audio setup and pitch detection variables
   // are in pitchDetector.js
@@ -31,6 +31,10 @@ $(document).ready(function() {
     };
   };
 
+  var updatePitchIntervalID = null;
+  var getAvgNoteIntervalID = null;
+  var updateGraphIntervalID = null; 
+
   var playSong = function(audioData) {
     
     audioContext.decodeAudioData(audioData, function(arrayBuffer) {
@@ -41,6 +45,14 @@ $(document).ready(function() {
       analyser.connect(audioContext.destination);
 
       source.start();
+
+      source.onended = function() {
+        console.log('Song has stopped');
+
+        clearInterval( updatePitchIntervalID );
+        clearInterval( getAvgNoteIntervalID );
+        clearInterval( updateGraphIntervalID ); 
+      };
     });
   };
 
@@ -74,7 +86,8 @@ $(document).ready(function() {
 
     var yScale = d3.scaleLinear()
       .domain([0, 150])
-      .range([0, svgHeight]);
+      .range([svgHeight, 0]);
+      // .range([0, svgHeight]);
 
     // Bind each note object in avgNoteArray
     // to a rect svg element
@@ -117,27 +130,12 @@ $(document).ready(function() {
     
     // Calculate the note 60 times a second
     // and push each note into the noteArray
-    setInterval(updatePitch, setIntervalTimeRate);
+    updatePitchIntervalID = setInterval(updatePitch, setIntervalTimeRate);
 
     // Calculate the per-second average note
     // and graph that note
-    setInterval(getAvgNote, 1000);
-    setInterval(updateGraph, 1000);
+    getAvgNoteIntervalID = setInterval(getAvgNote, 1000);
+    updateGraphIntervalID = setInterval(updateGraph, 1000);
   };
 
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
