@@ -31,18 +31,18 @@ $(document).ready(function() {
     };
   };
 
-  var updateSongPitchIntervalID = null;
-  var getSongAvgNoteIntervalID = null;
-  var updateSongGraphIntervalID = null; 
+  var updatePitchIntervalID = null;
+  var getAvgNoteIntervalID = null;
+  var updateGraphIntervalID = null; 
 
   var playSong = function(audioData) {
     
-    songAudioContext.decodeAudioData(audioData, function(arrayBuffer) {
-      var source = songAudioContext.createBufferSource();
+    audioContext.decodeAudioData(audioData, function(arrayBuffer) {
+      var source = audioContext.createBufferSource();
       source.buffer = arrayBuffer;
 
-      source.connect(songAnalyser);
-      songAnalyser.connect(songAudioContext.destination);
+      source.connect(analyser);
+      analyser.connect(audioContext.destination);
 
       source.start();
 
@@ -76,7 +76,7 @@ $(document).ready(function() {
 
   // Use D3 to graph avgNoteArray
   // Should scale dynamically
-  var updateGraph = function( avgNoteArray ) {
+  var updateGraph = function() {
     
     // Redefine the scale functions so that 
     // the graph will scale dynamically (hopefully!)
@@ -92,89 +92,50 @@ $(document).ready(function() {
     // Bind each note object in avgNoteArray
     // to a rect svg element
     var notes = graph.selectAll('rect')
-      .data(avgNoteArray, function(d) {
-        return d.id;
-      });
+      .data(avgNoteArray);
 
     // D3 General Update Pattern
 
     // ENTER
     notes.enter()
       .append('rect')
-      .attr('x', function(d, i) {
-        return xScale(i);
+      .attr('x', function(d) {
+        return xScale(d.id);
       })
       .attr('y', function(d) {
-        // console.log('Entering at ', d.value);
         return yScale(d.value);
       })
       .attr('width', svgWidth / avgNoteArray.length)
       .attr('height', 10)
-      .attr('fill', 'red')
-      .attr('noteID', function(d) {
-        return d.id;
-      });
+      .attr('fill', 'red');
 
     // UPDATE
     notes
       .transition()
       .ease(d3.easeSin)
-      .attr('x', function(d, i) {
-        return xScale(i);
+      .attr('x', function(d) {
+        return xScale(d.id);
       })
       .attr('y', function(d) {
         return yScale(d.value);
       })
       .attr('width', svgWidth / avgNoteArray.length)
       .attr('height', 10)
-      .attr('fill', 'blue')
-      .attr('noteID', function(d) {
-        return d.id;
-      });
-
-    // EXIT
-    notes
-      .exit()
-      .remove();   
+      .attr('fill', 'blue');   
   };
 
   // Generates a random note every second
   // and graphs it
   var startGraph = function() {
     
-    // Start obtaining user audio
-    // getUserAudio();
-
     // Calculate the note 60 times a second
-    // and push each note into the noteArray.
-    // Do this process for both the MP3 and the 
-    // user input audio
-    updateSongPitchIntervalID = setInterval(function() {
-
-      // Get pitch for MP3 audio
-      songNoteArray = updatePitch( songAnalyser, songAudioContext, songNoteArray, songBuf, songBuflen );
-
-      // Get pitch for user input
-      // updatePitch( userAnalyser, userAudioContext, userBuf, userBuflen );
-
-    }, setIntervalTimeRate);
+    // and push each note into the noteArray
+    updatePitchIntervalID = setInterval(updatePitch, setIntervalTimeRate);
 
     // Calculate the per-second average note
-    // and graph that note. Perform this process
-    // for MP3 and user input audio
-
-    // Calculate avgNote and graph it for MP3
-    getSongAvgNoteIntervalID = setInterval( function() {
-      songAvgNoteArray = getAvgNote( songNoteArray );
-    }, 1000 );
-    updateSongGraphIntervalID = setInterval( function() {
-      updateGraph( songAvgNoteArray );
-    }, 1000);
-
-    // Calculate avgNote and graph it for user input
-    // getUserAvgNoteIntervalID = setInterval( function() {
-    //   getAvgNote( userAvgNoteArray );
-    // }, 1000);
+    // and graph that note
+    getAvgNoteIntervalID = setInterval(getAvgNote, 1000);
+    updateGraphIntervalID = setInterval(updateGraph, 1000);
   };
 
 });
