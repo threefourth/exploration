@@ -76,7 +76,7 @@ $(document).ready(function() {
 
   // Use D3 to graph avgNoteArray
   // Should scale dynamically
-  var updateGraph = function() {
+  var updateGraph = function( avgNoteArray ) {
     
     // Redefine the scale functions so that 
     // the graph will scale dynamically (hopefully!)
@@ -136,10 +136,22 @@ $(document).ready(function() {
 
     }, setIntervalTimeRate);
 
-    // // Calculate the per-second average note
-    // // and graph that note
-    // getAvgNoteIntervalID = setInterval(getAvgNote, 1000);
-    // updateGraphIntervalID = setInterval(updateGraph, 1000);
+    // Calculate the per-second average note
+    // and graph that note
+    songGetAvgNoteIntervalID = setInterval( function() {
+
+      songAvgNoteArray.push ( getAvgNote( songNoteArray, songAvgNoteArray ) );
+
+      console.log( songAvgNoteArray );
+
+    }, 1000 );
+
+
+    songUpdateGraphIntervalID = setInterval( function() {
+
+      updateGraph( songAvgNoteArray );
+
+    }, 1000);
   };
 
 });

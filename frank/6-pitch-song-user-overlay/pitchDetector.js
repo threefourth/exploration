@@ -138,8 +138,6 @@ var getNote = function( audioContext, analyser, buf ) {
     note = 0;
   }
 
-  // noteArray.push(note);
-  console.log( note );
   return note;
 };
 
