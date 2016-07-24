@@ -74,9 +74,8 @@ $(document).ready(function() {
     avgNoteArray.push(note);
   };
 
-  // Use D3 to graph avgNoteArray
-  // Should scale dynamically
-  var updateGraph = function( avgNoteArray ) {
+  // Use D3 to draw MP3 notes on graph
+  var drawSongGraph = function( avgNoteArray ) {
     
     // Redefine the scale functions so that 
     // the graph will scale dynamically (hopefully!)
@@ -87,7 +86,6 @@ $(document).ready(function() {
     var yScale = d3.scaleLinear()
       .domain([0, 150])
       .range([svgHeight, 0]);
-      // .range([0, svgHeight]);
 
     // Bind each note object in avgNoteArray
     // to a rect svg element
@@ -124,6 +122,55 @@ $(document).ready(function() {
       .attr('fill', 'blue');   
   };
 
+  // Draw user's average notes to graph
+  var drawUserGraph = function( avgNoteArray ) {
+    
+    // Redefine the scale functions so that 
+    // the graph will scale dynamically (hopefully!)
+    var xScale = d3.scaleLinear()
+      .domain([0, avgNoteArray.length])
+      .range([0, svgWidth]);
+
+    var yScale = d3.scaleLinear()
+      .domain([0, 150])
+      .range([svgHeight, 0]);
+
+    // Bind each note object in avgNoteArray
+    // to a rect svg element
+    var notes = graph.selectAll('ellipse')
+      .data(avgNoteArray);
+
+    // D3 General Update Pattern
+
+    // ENTER
+    notes.enter()
+      .append('ellipse')
+      .attr('cx', function(d, i) {
+        return xScale(i) + (0.5 * svgWidth / avgNoteArray.length);
+      })
+      .attr('cy', function(d) {
+        return yScale(d.value);
+      })
+      .attr('rx', 0.5 * svgWidth / avgNoteArray.length)
+      .attr('ry', 5)
+      .attr('fill', 'yellow');
+
+    // UPDATE
+    notes
+      .transition()
+      .ease(d3.easeSin)
+      .attr('cx', function(d, i) {
+        return xScale(i) + (0.5 * svgWidth / avgNoteArray.length);
+      })
+      .attr('cy', function(d) {
+        return yScale(d.value);
+      })
+      .attr('rx', 0.5 * svgWidth / avgNoteArray.length)
+      .attr('ry', 5)
+      .attr('fill', 'red');  
+  };
+
+
   // Generates a random note every second
   // and graphs it
   var startGraph = function() {
@@ -136,22 +183,43 @@ $(document).ready(function() {
 
     }, setIntervalTimeRate);
 
-    // Calculate the per-second average note
+    // Calculate the per-second average note of MP3 input
     // and graph that note
     songGetAvgNoteIntervalID = setInterval( function() {
 
-      songAvgNoteArray.push ( getAvgNote( songNoteArray, songAvgNoteArray ) );
-
-      console.log( songAvgNoteArray );
+      songAvgNoteArray.push( getAvgNote( songNoteArray, songAvgNoteArray ) );
 
     }, 1000 );
 
-
     songUpdateGraphIntervalID = setInterval( function() {
 
-      updateGraph( songAvgNoteArray );
+      drawSongGraph( songAvgNoteArray );
 
     }, 1000);
-  };
 
+    // Calculate the per-second average note of user input
+    // audio and graph the note
+    getUserAudio();
+
+    userUpdateNoteIntervalID = setInterval( function() {
+
+      userNoteArray.push( getNote( userAudioContext, userAnalyser, userBuf ));
+
+    }, setIntervalTimeRate);
+
+    userGetAvgNoteIntervalID = setInterval( function() {
+
+      userAvgNoteArray.push( getAvgNote ( userNoteArray, userAvgNoteArray ) );
+
+      console.log('userAvgNoteArray: ', userAvgNoteArray);
+
+    }, 1000);
+
+    userUpdateGraphIntervalID = setInterval( function() {
+
+      drawUserGraph( userAvgNoteArray );
+
+    }, 1000);
+
+  };
 });
