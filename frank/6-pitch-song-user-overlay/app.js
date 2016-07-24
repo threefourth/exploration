@@ -34,6 +34,9 @@ $(document).ready(function() {
   var songUpdateNoteIntervalID = null;
   var songGetAvgNoteIntervalID = null;
   var songUpdateGraphIntervalID = null; 
+  var userUpdateNoteIntervalID = null;
+  var userGetAvgNoteIntervalID = null;
+  var userUpdateGraphIntervalID = null;
 
   var playSong = function( audioData ) {
     
@@ -47,11 +50,20 @@ $(document).ready(function() {
       source.start();
 
       source.onended = function() {
+        // Clear pitch detection, visualization,
+        // and user audio input
         console.log('Song has stopped');
 
         clearInterval( songUpdateNoteIntervalID );
         clearInterval( songGetAvgNoteIntervalID );
         clearInterval( songUpdateGraphIntervalID ); 
+        clearInterval( userUpdateNoteIntervalID );
+        clearInterval( userGetAvgNoteIntervalID );
+        clearInterval( userUpdateGraphIntervalID );
+
+        localStream.getAudioTracks()[0].stop( 0 );
+        localStream = null;
+
       };
     });
   };
