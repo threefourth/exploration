@@ -24,16 +24,27 @@ SOFTWARE.
 
 var setIntervalTimeRate = 1000 / 60; // milliseconds
 
-var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-var analyser = audioContext.createAnalyser();
+// MP3 related varibles
+var songAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+var songAnalyser = songAudioContext.createAnalyser();
 
-var noteArray = []; // Contains notes taken 60 times a second
-var avgNoteArray = []; // Average of notes per second
+var songNoteArray = []; // Contains notes taken 60 times a second
+var songAvgNoteArray = []; // Average of notes per second
 
-var rafID = null;
-var tracks = null;
-var buflen = 1024;
-var buf = new Float32Array( buflen );
+var songBuflen = 1024;
+var songBuf = new Float32Array( songBuflen );
+
+
+// User audio related variables
+var userAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+var userAnalyser = userAudioContext.createAnalyser();
+
+var userNoteArray = []; // Contains notes taken 60 times a second
+var userAvgNoteArray = []; // Average of notes per second
+
+var userBuflen = 1024;
+var userBuf = new Float32Array( userBuflen );
+
 
 var noteStrings = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
@@ -50,14 +61,12 @@ var centsOffFromPitch = function( frequency, note ) {
   return Math.floor( 1200 * Math.log( frequency / frequencyFromNoteNumber( note )) / Math.log(2) );
 };
 
-var MIN_SAMPLES = 0;  // will be initialized when AudioContext is created.
-var GOOD_ENOUGH_CORRELATION = 0.9; // this is the 'bar' for how close a correlation needs to be
-
-
 // The algorithm that calculates the autocorrelation (ac) which is equal to the pitch
 var autoCorrelate = function( buf, sampleRate ) {
   var SIZE = buf.length;
+  var MIN_SAMPLES = 0; // will be initialized when AudioContext is created.
   var MAX_SAMPLES = Math.floor(SIZE / 2);
+  var GOOD_ENOUGH_CORRELATION = 0.9; // this is the 'bar' for how close a correlation needs to be
   var bestOffset = -1;
   var bestCorrelation = 0;
   var rms = 0;
@@ -111,9 +120,8 @@ var autoCorrelate = function( buf, sampleRate ) {
   //  var best_frequency = sampleRate/bestOffset;
 };
 
-var updatePitch = function( time ) {
+var getNote = function( audioContext, analyser, buf ) {
 
-  var cycles = new Array;
   analyser.getFloatTimeDomainData( buf );
 
   var ac = autoCorrelate( buf, audioContext.sampleRate );
@@ -130,20 +138,12 @@ var updatePitch = function( time ) {
     note = 0;
   }
 
-  noteArray.push(note);
+  // noteArray.push(note);
+  console.log( note );
+  return note;
 };
 
-var getMax = function(array) {
-  var max = array[0];
-  array.forEach(function(el) {
-    if (el > max) {
-      max = el;
-    }
-  });
-  return max;
-};
-
-var getAvgNote = function() {
+var getAvgNote = function( noteArray, avgNoteArray ) {
   
   // Get all notes in the most recent second
   var startIndex = avgNoteArray.length * 60;
@@ -178,7 +178,8 @@ var getAvgNote = function() {
   };
 
   console.log( avgNote.value );
-  avgNoteArray.push( avgNote );
+  
+  return avgNote;
 };
 
 

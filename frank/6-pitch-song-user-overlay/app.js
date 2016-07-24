@@ -31,27 +31,27 @@ $(document).ready(function() {
     };
   };
 
-  var updatePitchIntervalID = null;
-  var getAvgNoteIntervalID = null;
-  var updateGraphIntervalID = null; 
+  var songUpdateNoteIntervalID = null;
+  var songGetAvgNoteIntervalID = null;
+  var songUpdateGraphIntervalID = null; 
 
-  var playSong = function(audioData) {
+  var playSong = function( audioData ) {
     
-    audioContext.decodeAudioData(audioData, function(arrayBuffer) {
-      var source = audioContext.createBufferSource();
+    songAudioContext.decodeAudioData( audioData, function( arrayBuffer ) {
+      var source = songAudioContext.createBufferSource();
       source.buffer = arrayBuffer;
 
-      source.connect(analyser);
-      analyser.connect(audioContext.destination);
+      source.connect( songAnalyser );
+      songAnalyser.connect( songAudioContext.destination );
 
       source.start();
 
       source.onended = function() {
         console.log('Song has stopped');
 
-        clearInterval( updatePitchIntervalID );
-        clearInterval( getAvgNoteIntervalID );
-        clearInterval( updateGraphIntervalID ); 
+        clearInterval( songUpdateNoteIntervalID );
+        clearInterval( songGetAvgNoteIntervalID );
+        clearInterval( songUpdateGraphIntervalID ); 
       };
     });
   };
@@ -130,12 +130,16 @@ $(document).ready(function() {
     
     // Calculate the note 60 times a second
     // and push each note into the noteArray
-    updatePitchIntervalID = setInterval(updatePitch, setIntervalTimeRate);
+    songUpdateNoteIntervalID = setInterval( function() {
 
-    // Calculate the per-second average note
-    // and graph that note
-    getAvgNoteIntervalID = setInterval(getAvgNote, 1000);
-    updateGraphIntervalID = setInterval(updateGraph, 1000);
+      songNoteArray.push( getNote ( songAudioContext, songAnalyser, songBuf ));
+
+    }, setIntervalTimeRate);
+
+    // // Calculate the per-second average note
+    // // and graph that note
+    // getAvgNoteIntervalID = setInterval(getAvgNote, 1000);
+    // updateGraphIntervalID = setInterval(updateGraph, 1000);
   };
 
 });
